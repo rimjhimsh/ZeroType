@@ -58,9 +58,9 @@
 - [x] 錄音完成後自動刪除暫存音檔（辨識/精修完成後 `deleteFile()`）
 - [x] 取消旗標（`_cancelled`）：`cancel()` 可中斷任意階段的 async 流程
 
-### 3.2 語音辨識模組（Groq / Whisper）
+### 3.2 語音辨識模組（OpenAI / Transcribe）
 - [x] **[前置]** 建立 `ModelConfigRepository` 介面（含語音辨識 Provider/Model/Key 存取）
-- [x] 實作 Groq Whisper API 串接（`SpeechRecognitionService`，multipart 上傳，回傳純文字）
+- [x] 實作 OpenAI Transcribe API 串接（`SpeechRecognitionService`，multipart 上傳，回傳純文字）
 - [x] API Key 儲存與讀取（`FlutterSecureStorage`，per-provider key）
 - [x] 錯誤處理：未設定 API Key / Provider/Model 時顯示錯誤 overlay
 
