@@ -24,7 +24,17 @@ class SpeechProviderController extends _$SpeechProviderController {
   @override
   Future<({String? providerId, String? modelId, String? apiKey, String? customEndpoint})>
       build() async {
-    final providerId = await _repo.getSelectedSpeechProviderId();
+    var providerId = await _repo.getSelectedSpeechProviderId();
+
+    // Auto-select the first provider on first launch so saveApiKey/selectModel work correctly
+    if (providerId == null) {
+      final config = await _repo.loadProvidersConfig();
+      if (config.speechRecognition.isNotEmpty) {
+        providerId = config.speechRecognition.first.id;
+        await _repo.saveSelectedSpeechProviderId(providerId);
+      }
+    }
+
     return (
       providerId: providerId,
       modelId: await _repo.getSelectedSpeechModelId(providerId ?? ''),

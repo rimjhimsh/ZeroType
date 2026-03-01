@@ -5,6 +5,8 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:record/record.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zero_type/core/constants/app_constants.dart';
 import 'package:zero_type/core/di/injection.dart';
 import 'package:zero_type/core/services/hotkey_service.dart';
 import 'settings_state.dart';
@@ -13,29 +15,13 @@ part 'settings_controller.g.dart';
 
 @riverpod
 class SettingsController extends _$SettingsController {
-  Timer? _refreshTimer;
-
   @override
   Future<SettingsState> build() async {
     print('[SettingsController] Building state...');
-    
-    // Auto refresh permissions every 2 seconds when settings page is open
-    _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) => _refreshPermissions());
-    ref.onDispose(() => _refreshTimer?.cancel());
 
     try {
       print('[SettingsController] Checking if launch at startup is enabled...');
-      bool isLaunchEnabled = false;
-      try {
-        isLaunchEnabled = await launchAtStartup.isEnabled().timeout(
-          const Duration(seconds: 2),
-        );
-      } on MissingPluginException {
-        print('[SettingsController] launch_at_startup plugin not implemented or missing.');
-      } catch (e) {
-        print('[SettingsController] Error checking launchAtStartup: $e');
-      }
+      final isLaunchEnabled = getIt<SharedPreferences>().getBool(AppConstants.launchAtStartupKey) ?? false;
       
       print('[SettingsController] Fetching current hotkey...');
       final hotkey = getIt<HotkeyService>().currentHotkey;
@@ -67,20 +53,26 @@ class SettingsController extends _$SettingsController {
       }
     } on MissingPluginException {
       print('[SettingsController] toggleLaunchAtStartup failed: plugin missing.');
+      return;
     } catch (e) {
       print('[SettingsController] toggleLaunchAtStartup error: $e');
+      return;
     }
-    ref.invalidateSelf();
+    await getIt<SharedPreferences>().setBool(AppConstants.launchAtStartupKey, value);
+    final currentState = state.value;
+    if (currentState != null) {
+      state = AsyncData(currentState.copyWith(launchAtStartup: value));
+    }
   }
 
-  void startRecordingHotkey() {
+  Future<void> startRecordingHotkey() async {
     print('[SettingsController] Starting hotkey recording...');
     final currentState = state.value;
     if (currentState == null) return;
-    
-    // Disable global hotkey to avoid interference
-    getIt<HotkeyService>().pause();
-    
+
+    // Disable global hotkey BEFORE showing overlay to prevent accidental triggers
+    await getIt<HotkeyService>().pause();
+
     state = AsyncData(currentState.copyWith(isRecordingHotkey: true));
   }
 
@@ -143,19 +135,27 @@ class SettingsController extends _$SettingsController {
     getIt<HotkeyService>().resume();
   }
 
-  Future<void> _refreshPermissions() async {
-    final currentState = state.value;
-    if (currentState == null) return;
-
+  /// Called by SettingsPage whenever it becomes visible.
+  Future<void> refreshPermissions() async {
+    // Run checks independently of current state loading status
     final isAccessibility = await _checkAccessibility();
     final isMicrophone = await AudioRecorder().hasPermission();
 
-    if (isAccessibility != currentState.isAccessibilityAuthorized ||
-        isMicrophone != currentState.isMicrophoneAuthorized) {
+    final currentState = state.value;
+    if (currentState != null) {
       state = AsyncData(currentState.copyWith(
         isAccessibilityAuthorized: isAccessibility,
         isMicrophoneAuthorized: isMicrophone,
       ));
+    } else {
+      // State is still loading (initial build not done yet);
+      // wait for it to complete, then update
+      state.whenData((s) {
+        state = AsyncData(s.copyWith(
+          isAccessibilityAuthorized: isAccessibility,
+          isMicrophoneAuthorized: isMicrophone,
+        ));
+      });
     }
   }
 

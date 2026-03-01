@@ -73,10 +73,31 @@ class ZeroTypeController extends _$ZeroTypeController {
       return;
     }
 
+    // Check accessibility permission
+    const permissionChannel = MethodChannel('com.zerotype.app/permission');
+    bool isAccessibilityOk = false;
+    try {
+      isAccessibilityOk =
+          await permissionChannel.invokeMethod<bool>('checkAccessibility') ??
+              false;
+    } catch (_) {}
+    if (!ref.mounted || _cancelled) return;
+    if (!isAccessibilityOk) {
+      await _showNativeOverlay('error', '請先授權輔助使用權限');
+      await SoundService.playCancelSound();
+      await Future.delayed(const Duration(seconds: 3));
+      if (ref.mounted && !_cancelled) {
+        state = const ZeroTypeState();
+        await _hideNativeOverlay();
+      }
+      return;
+    }
+
     final hasPermission = await _recordingService.requestPermission();
     if (!ref.mounted || _cancelled) return;
     if (!hasPermission) {
-      await _showNativeOverlay('error', '未取得麥克風權限');
+      await _showNativeOverlay('error', '請先授權麥克風權限');
+      await SoundService.playCancelSound();
       await Future.delayed(const Duration(seconds: 3));
       if (ref.mounted && !_cancelled) {
         state = const ZeroTypeState();

@@ -2,10 +2,10 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=flutter,dart,darteditor,visualstudiocode,windows,macos,xcode
 
 ### ZeroType ###
-.agent/
 .agents/
 .claude/
 .idea/
+*.dmg
 
 ### Dart ###
 # See https://www.dartlang.org/guides/libraries/private-files

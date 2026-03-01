@@ -7,14 +7,63 @@ import 'package:zero_type/core/theme/theme_controller.dart';
 import '../controllers/settings_controller.dart';
 
 @RoutePage()
-class SettingsPage extends ConsumerWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends ConsumerState<SettingsPage> with WidgetsBindingObserver, AutoRouteAwareStateMixin<SettingsPage> {
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Force a full rebuild when page is first shown
+    WidgetsBinding.instance.addPostFrameCallback((_) => _invalidateSettings());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Fires when user returns from System Preferences
+    if (state == AppLifecycleState.resumed) {
+      _invalidateSettings();
+    }
+  }
+
+  @override
+  void didPush() => _invalidateSettings();
+
+  @override
+  void didPopNext() => _invalidateSettings();
+
+  void _invalidateSettings() {
+    // Invalidating forces the provider to call build() from scratch,
+    // ensuring we always get fresh permission states from the OS.
+    ref.invalidate(settingsControllerProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(themeControllerProvider);
     final isDark = themeMode == ThemeMode.dark;
     final settings = ref.watch(settingsControllerProvider);
+
+    // Once the controller finishes its initial async build, immediately
+    // re-invalidate to snapshot the freshest OS permission state.
+    ref.listen(settingsControllerProvider, (previous, next) {
+      if (previous?.isLoading == true && next.hasValue) {
+        // Don't invalidate again here — build() already fetched fresh permissions.
+        // This listener is kept only for future extensibility.
+      }
+    });
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -119,11 +168,8 @@ class SettingsPage extends ConsumerWidget {
                         title: '輔助使用權限',
                         subtitle: '自動貼上功能需要此權限以模擬鍵盤動作',
                         isAuthorized: data.isAccessibilityAuthorized,
-                        onCheck: () => _showPermissionDialog(
-                          context,
-                          '輔助使用',
-                          '請至「系統設定 > 隱私權與安全性 > 輔助使用」中，將 ZeroType 勾選開啟即可。',
-                        ),
+                        onCheck: () => const MethodChannel('com.zerotype.app/permission')
+                            .invokeMethod('openAccessibilitySettings'),
                       ),
                       loading: () => const _LoadingTile(),
                       error: (_, __) => const SizedBox.shrink(),
@@ -135,11 +181,8 @@ class SettingsPage extends ConsumerWidget {
                         title: '麥克風權限',
                         subtitle: '語音辨識功能需要存取你的麥克風',
                         isAuthorized: data.isMicrophoneAuthorized,
-                        onCheck: () => _showPermissionDialog(
-                          context,
-                          '麥克風',
-                          '請至「系統設定 > 隱私權與安全性 > 麥克風」中，將 ZeroType 勾選開啟即可。',
-                        ),
+                        onCheck: () => const MethodChannel('com.zerotype.app/permission')
+                            .invokeMethod('openMicrophoneSettings'),
                       ),
                       loading: () => const _LoadingTile(),
                       error: (_, __) => const SizedBox.shrink(),
@@ -187,12 +230,14 @@ class SettingsPage extends ConsumerWidget {
     if (hotkey.key is PhysicalKeyboardKey) {
       final physKey = hotkey.key as PhysicalKeyboardKey;
       keyLabel = physKey.debugName ?? 'Key';
+      if (keyLabel.startsWith('Key ')) keyLabel = keyLabel.substring(4);
     } else if (hotkey.key is LogicalKeyboardKey) {
       keyLabel = (hotkey.key as LogicalKeyboardKey).keyLabel;
     }
 
-    if (keyLabel.startsWith('Key ')) keyLabel = keyLabel.substring(4);
-    if (hotkey.key == PhysicalKeyboardKey.space || hotkey.key == LogicalKeyboardKey.space) keyLabel = 'Space';
+    if (hotkey.key == PhysicalKeyboardKey.space || hotkey.key == LogicalKeyboardKey.space) {
+      keyLabel = 'Space';
+    }
     
     if (widgets.isNotEmpty) widgets.add(const Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Text('+')));
     widgets.add(_KeyBadge(label: keyLabel.toUpperCase()));
@@ -203,25 +248,6 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
-  void _showPermissionDialog(
-    BuildContext context,
-    String title,
-    String content,
-  ) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('如何開啟權限'),
-        content: Text(content),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('確定'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _HotkeyRecorderOverlay extends StatefulWidget {
@@ -285,10 +311,17 @@ class _HotkeyRecorderOverlayState extends State<_HotkeyRecorderOverlay> {
       } else if (key == PhysicalKeyboardKey.space) {
         parts.add('Space');
       } else {
-        // Simple heuristic for label
+        // More robust labeling for PhysicalKeyboardKey
         String label = key.debugName ?? 'Key';
-        if (label.startsWith('Key ')) label = label.substring(4);
-        parts.add(label.toUpperCase());
+        if (label.startsWith('Key ')) {
+          label = label.substring(4);
+        }
+        
+        // Handle specific cases or ensure it's uppercase
+        if (label.length == 1) {
+          label = label.toUpperCase();
+        }
+        parts.add(label);
       }
     }
 
@@ -527,7 +560,7 @@ class _PermissionTile extends StatelessWidget {
               visualDensity: VisualDensity.compact,
               padding: const EdgeInsets.symmetric(horizontal: 12),
             ),
-            child: const Text('查看說明'),
+            child: const Text('打開設定'),
           ),
         ],
       ),

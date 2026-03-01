@@ -1,5 +1,6 @@
 import Cocoa
 import FlutterMacOS
+import ServiceManagement
 
 @main
 class AppDelegate: FlutterAppDelegate {
@@ -11,6 +12,7 @@ class AppDelegate: FlutterAppDelegate {
   private var textAnimTimer: Timer?
   private var cancelButton: NSButton?
   private var escEventMonitor: Any?
+  private var localEscEventMonitor: Any?
   private var controlChannel: FlutterMethodChannel?
 
   override func applicationDidFinishLaunching(_ notification: Notification) {
@@ -306,10 +308,14 @@ class AppDelegate: FlutterAppDelegate {
 
   private func startEscMonitor() {
     guard escEventMonitor == nil else { return }
+    // Global: catches ESC when another app is focused (e.g. user is in browser)
     escEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
-      if event.keyCode == 53 { // ESC
-        self?.triggerCancel()
-      }
+      if event.keyCode == 53 { self?.triggerCancel() }
+    }
+    // Local: catches ESC when ZeroType itself is the focused app
+    localEscEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event -> NSEvent? in
+      if event.keyCode == 53 { self?.triggerCancel() }
+      return event
     }
   }
 
@@ -317,6 +323,10 @@ class AppDelegate: FlutterAppDelegate {
     if let monitor = escEventMonitor {
       NSEvent.removeMonitor(monitor)
       escEventMonitor = nil
+    }
+    if let monitor = localEscEventMonitor {
+      NSEvent.removeMonitor(monitor)
+      localEscEventMonitor = nil
     }
   }
 
@@ -332,6 +342,7 @@ class AppDelegate: FlutterAppDelegate {
     setupOverlayChannel(messenger: messenger)
     setupKeyboardChannel(messenger: messenger)
     setupPermissionChannel(messenger: messenger)
+    setupLaunchAtStartupChannel(messenger: messenger)
     controlChannel = FlutterMethodChannel(
       name: "com.zerotype.app/control",
       binaryMessenger: messenger
@@ -388,11 +399,50 @@ class AppDelegate: FlutterAppDelegate {
     channel.setMethodCallHandler { (call, result) in
       switch call.method {
       case "checkAccessibility":
-        let isTrusted = AXIsProcessTrusted()
+        // Use the same API as simulatePaste() but without showing the prompt.
+        // AXIsProcessTrusted() can sometimes return stale results; the options
+        // variant forces a fresh lookup from the TCC database.
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false]
+        let isTrusted = AXIsProcessTrustedWithOptions(options as CFDictionary)
         result(isTrusted)
       case "openAccessibilitySettings":
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
         NSWorkspace.shared.open(url)
+        result(nil)
+      case "openMicrophoneSettings":
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!
+        NSWorkspace.shared.open(url)
+        result(nil)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+  }
+
+  private func setupLaunchAtStartupChannel(messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(name: "launch_at_startup", binaryMessenger: messenger)
+    channel.setMethodCallHandler { (call, result) in
+      switch call.method {
+      case "launchAtStartupIsEnabled":
+        if #available(macOS 13.0, *) {
+          let status = SMAppService.mainApp.status
+          result(status == .enabled || status == .requiresApproval)
+        } else {
+          result(false)
+        }
+      case "launchAtStartupSetEnabled":
+        guard let args = call.arguments as? [String: Any],
+              let enabled = args["setEnabledValue"] as? Bool else {
+          result(nil)
+          return
+        }
+        if #available(macOS 13.0, *) {
+          if enabled {
+            try? SMAppService.mainApp.register()
+          } else {
+            try? SMAppService.mainApp.unregister()
+          }
+        }
         result(nil)
       default:
         result(FlutterMethodNotImplemented)

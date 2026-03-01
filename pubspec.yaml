@@ -84,3 +84,4 @@ flutter:
   assets:
     - assets/config/providers.json
     - assets/icons/
+    - prompts/

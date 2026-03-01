@@ -59,8 +59,8 @@ class HotkeyService {
 
   Future<void> updateHotkey(HotKey newKey) async {
     print('[HotkeyService] Updating hotkey from $_currentHotkey to $newKey');
-    // Ensure we are unregistered before updating the reference
-    await hotKeyManager.unregister(_currentHotkey);
+    // More reliable to unregister all for this app
+    await hotKeyManager.unregisterAll();
     _currentHotkey = newKey;
     await _saveHotkey(newKey);
     
@@ -75,6 +75,7 @@ class HotkeyService {
     await hotKeyManager.register(
       _currentHotkey,
       keyDownHandler: (_) {
+        if (_isPaused) return; // Dart-level guard against in-flight callbacks
         print('[HotkeyService] Global Hotkey Activated!');
         _onActivated?.call();
       },
@@ -83,9 +84,9 @@ class HotkeyService {
 
   Future<void> pause() async {
     if (_isPaused) return;
-    print('[HotkeyService] Pausing hotkey...');
-    await hotKeyManager.unregister(_currentHotkey);
-    _isPaused = true;
+    _isPaused = true; // Set immediately to block any in-flight callbacks
+    print('[HotkeyService] Pausing all hotkeys...');
+    await hotKeyManager.unregisterAll();
   }
 
   Future<void> resume() async {
