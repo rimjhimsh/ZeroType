@@ -1,6 +1,7 @@
 enum ZeroTypeStatus {
   idle,
   recording,
+  cancelling,
   saving,
   transcribing,
   done,

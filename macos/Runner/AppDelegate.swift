@@ -213,6 +213,12 @@ class AppDelegate: FlutterAppDelegate {
         NSColor(red: 1.0, green: 0.478, blue: 0.0, alpha: 0.7),
         NSColor(red: 1.0, green: 0.478, blue: 0.0, alpha: 0.4)
       )
+    case "cancelling":
+      (
+        NSColor(red: 0.6, green: 0.6, blue: 0.6, alpha: 1.0),
+        NSColor(red: 0.6, green: 0.6, blue: 0.6, alpha: 0.7),
+        NSColor(red: 0.6, green: 0.6, blue: 0.6, alpha: 0.4)
+      )
     case "saving":
       (
         NSColor(red: 1.0, green: 0.65, blue: 0.0, alpha: 1.0),
@@ -242,6 +248,8 @@ class AppDelegate: FlutterAppDelegate {
     statusDot?.layer?.backgroundColor = dotColor.cgColor
     statusLabel?.textColor = dotColor
     cancelButton?.contentTintColor = dotColor.withAlphaComponent(0.6)
+    // 取消中時隱藏 X 按鈕，避免重複觸發
+    cancelButton?.isHidden = (status == "cancelling")
     if let container = overlayPanel?.contentView?.subviews.first {
       container.layer?.borderColor = borderColor.cgColor
       container.layer?.shadowColor = shadowColor.cgColor
@@ -261,14 +269,15 @@ class AppDelegate: FlutterAppDelegate {
     }
 
     // Account for animation dots in width to avoid jumping
-    let animDotsWidth = status == "transcribing" ? (statusLabel?.font?.pointSize ?? 13) * 0.8 : 0
+    let hasTextAnim = status == "transcribing" || status == "cancelling"
+    let animDotsWidth = hasTextAnim ? (statusLabel?.font?.pointSize ?? 13) * 0.8 : 0
 
     return max(140, totalWidth + animDotsWidth)
   }
 
   private func startDotAnimation(status: String) {
     stopDotAnimation()
-    guard status == "recording" || status == "saving" else { return }
+    guard status == "recording" || status == "saving" || status == "cancelling" else { return }
     var alpha: CGFloat = 1.0
     dotAnimTimer = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: true) {
       [weak self] _ in
@@ -287,7 +296,7 @@ class AppDelegate: FlutterAppDelegate {
 
   private func startTextAnimation(status: String, message: String) {
     stopTextAnimation()
-    guard status == "transcribing" else { return }
+    guard status == "transcribing" || status == "cancelling" else { return }
     var dotCount = 0
     textAnimTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) {
       [weak self] _ in

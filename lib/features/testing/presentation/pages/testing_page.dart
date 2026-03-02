@@ -271,6 +271,7 @@ class _TestingPageState extends ConsumerState<TestingPage> {
   String _statusLabel(ZeroTypeStatus status) => switch (status) {
         ZeroTypeStatus.idle => '待機中',
         ZeroTypeStatus.recording => '錄音中…',
+        ZeroTypeStatus.cancelling => '取消中…',
         ZeroTypeStatus.saving => '擷取中…',
         ZeroTypeStatus.transcribing => '處理中…',
         ZeroTypeStatus.done => '完成',
@@ -281,6 +282,8 @@ class _TestingPageState extends ConsumerState<TestingPage> {
         ZeroTypeStatus.idle =>
           Theme.of(context).colorScheme.onSurface.withAlpha(100),
         ZeroTypeStatus.recording => const Color(0xFF6C63FF),
+        ZeroTypeStatus.cancelling =>
+          Theme.of(context).colorScheme.onSurface.withAlpha(100),
         ZeroTypeStatus.saving => const Color(0xFFFFAA00),
         ZeroTypeStatus.transcribing => const Color(0xFF63B3FF),
         ZeroTypeStatus.done => Colors.greenAccent,

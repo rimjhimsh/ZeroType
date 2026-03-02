@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -39,6 +40,8 @@ class ZeroTypeController extends _$ZeroTypeController {
       await _stopAndProcess();
     } else if (state.status == ZeroTypeStatus.idle) {
       await _startRecording();
+    } else if (state.status == ZeroTypeStatus.cancelling) {
+      return; // 已在取消中，忽略重複觸發
     } else {
       await cancel();
     }
@@ -47,21 +50,24 @@ class ZeroTypeController extends _$ZeroTypeController {
   Future<void> cancel() async {
     _cancelled = true;
     if (state.status == ZeroTypeStatus.recording) {
+      // 立即更新 UI，給使用者即時回饋
+      state = state.copyWith(status: ZeroTypeStatus.cancelling);
+      unawaited(_showNativeOverlay('cancelling', '取消中'));
       await _recordingService.cancelRecording();
     }
     await getIt<SoundService>().playCancelSound();
-    await getIt<SoundService>().resumeMusic(); // Resume music if cancelled
+    await getIt<SoundService>().resumeMusic();
     state = const ZeroTypeState();
     await _hideNativeOverlay();
   }
 
   Future<void> _startRecording() async {
     _cancelled = false;
-    
+
     // Pre-check configuration
     final config = await ref.read(speechProviderControllerProvider.future);
-    if (config.providerId == null || config.providerId!.isEmpty || 
-        config.apiKey == null || config.apiKey!.isEmpty || 
+    if (config.providerId == null || config.providerId!.isEmpty ||
+        config.apiKey == null || config.apiKey!.isEmpty ||
         config.modelId == null || config.modelId!.isEmpty) {
       await _showNativeOverlay('error', '請先完成語音辨識模型設定');
       await getIt<SoundService>().playCancelSound();
@@ -73,14 +79,22 @@ class ZeroTypeController extends _$ZeroTypeController {
       return;
     }
 
-    // Check accessibility permission
+    // [優化1] 同時檢查 accessibility 與麥克風權限，縮短序列等待時間
     const permissionChannel = MethodChannel('com.zerotype.app/permission');
     bool isAccessibilityOk = false;
+    bool hasPermission = false;
     try {
-      isAccessibilityOk =
-          await permissionChannel.invokeMethod<bool>('checkAccessibility') ??
-              false;
+      final results = await Future.wait([
+        permissionChannel
+            .invokeMethod<bool>('checkAccessibility')
+            .then((v) => v ?? false)
+            .catchError((_) => false),
+        _recordingService.requestPermission().catchError((_) => false),
+      ]);
+      isAccessibilityOk = results[0] as bool;
+      hasPermission = results[1] as bool;
     } catch (_) {}
+
     if (!ref.mounted || _cancelled) return;
     if (!isAccessibilityOk) {
       await _showNativeOverlay('error', '請先授權輔助使用權限');
@@ -92,9 +106,6 @@ class ZeroTypeController extends _$ZeroTypeController {
       }
       return;
     }
-
-    final hasPermission = await _recordingService.requestPermission();
-    if (!ref.mounted || _cancelled) return;
     if (!hasPermission) {
       await _showNativeOverlay('error', '請先授權麥克風權限');
       await getIt<SoundService>().playCancelSound();
@@ -106,21 +117,27 @@ class ZeroTypeController extends _$ZeroTypeController {
       return;
     }
 
-    await getIt<SoundService>().pauseMusic(); // Pause background music
-    await getIt<SoundService>().playStartSound();
+    // [優化2] pauseMusic 與 playStartSound 不阻塞錄音啟動
+    // osascript 需 300–700ms，afplay 需 200–500ms，兩者皆非錄音前置條件
+    unawaited(getIt<SoundService>().pauseMusic());
+    unawaited(getIt<SoundService>().playStartSound());
+
     if (!ref.mounted || _cancelled) return;
     state = state.copyWith(status: ZeroTypeStatus.recording, amplitude: 0.0);
-    await _showNativeOverlay('recording', '錄音中');
 
+    // [優化3] overlay 顯示與錄音初始化同步進行
     try {
-      await _recordingService.startRecording(
-        onAmplitude: (amp) {
-          if (ref.mounted && !_cancelled) {
-            state = state.copyWith(amplitude: amp);
-            _updateNativeAmplitude(amp);
-          }
-        },
-      );
+      await Future.wait([
+        _showNativeOverlay('recording', '錄音中'),
+        _recordingService.startRecording(
+          onAmplitude: (amp) {
+            if (ref.mounted && !_cancelled) {
+              state = state.copyWith(amplitude: amp);
+              _updateNativeAmplitude(amp);
+            }
+          },
+        ),
+      ]);
     } catch (e) {
       if (!ref.mounted || _cancelled) return;
       state = state.copyWith(
