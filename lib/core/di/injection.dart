@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/sound_service.dart';
 import '../services/speech_recognition_service.dart';
 import '../services/hotkey_service.dart';
 import '../services/tray_service.dart';
@@ -22,5 +23,8 @@ Future<void> configureDependencies() async {
   );
   getIt.registerSingleton<TrayService>(
     TrayService(),
+  );
+  getIt.registerSingleton<SoundService>(
+    SoundService(prefs: sharedPreferences),
   );
 }

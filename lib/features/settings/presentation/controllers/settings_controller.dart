@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zero_type/core/constants/app_constants.dart';
 import 'package:zero_type/core/di/injection.dart';
 import 'package:zero_type/core/services/hotkey_service.dart';
+import 'package:zero_type/core/services/sound_service.dart';
 import 'settings_state.dart';
 
 part 'settings_controller.g.dart';
@@ -25,10 +26,15 @@ class SettingsController extends _$SettingsController {
       
       print('[SettingsController] Fetching current hotkey...');
       final hotkey = getIt<HotkeyService>().currentHotkey;
-      
+
       print('[SettingsController] Fetching permissions...');
       final isAccessibilityAuthorized = await _checkAccessibility();
       final isMicrophoneAuthorized = await AudioRecorder().hasPermission();
+
+      final prefs = getIt<SharedPreferences>();
+      final soundEnabled = prefs.getBool(AppConstants.soundEnabledKey) ?? true;
+      final startSound = prefs.getString(AppConstants.startSoundKey) ?? kDefaultStartSound;
+      final stopSound = prefs.getString(AppConstants.stopSoundKey) ?? kDefaultStopSound;
 
       print('[SettingsController] Build complete.');
       return SettingsState(
@@ -36,6 +42,9 @@ class SettingsController extends _$SettingsController {
         hotkey: hotkey,
         isAccessibilityAuthorized: isAccessibilityAuthorized,
         isMicrophoneAuthorized: isMicrophoneAuthorized,
+        soundEnabled: soundEnabled,
+        startSound: startSound,
+        stopSound: stopSound,
       );
     } catch (e, st) {
       print('[SettingsController] Error building settings state: $e\n$st');
@@ -133,6 +142,30 @@ class SettingsController extends _$SettingsController {
     
     // Resume local hotkey (already handled in stopRecordingHotkey but stay safe)
     getIt<HotkeyService>().resume();
+  }
+
+  Future<void> toggleSound(bool value) async {
+    await getIt<SharedPreferences>().setBool(AppConstants.soundEnabledKey, value);
+    final currentState = state.value;
+    if (currentState != null) {
+      state = AsyncData(currentState.copyWith(soundEnabled: value));
+    }
+  }
+
+  Future<void> setStartSound(String path) async {
+    await getIt<SharedPreferences>().setString(AppConstants.startSoundKey, path);
+    final currentState = state.value;
+    if (currentState != null) {
+      state = AsyncData(currentState.copyWith(startSound: path));
+    }
+  }
+
+  Future<void> setStopSound(String path) async {
+    await getIt<SharedPreferences>().setString(AppConstants.stopSoundKey, path);
+    final currentState = state.value;
+    if (currentState != null) {
+      state = AsyncData(currentState.copyWith(stopSound: path));
+    }
   }
 
   /// Called by SettingsPage whenever it becomes visible.

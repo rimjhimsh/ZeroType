@@ -82,7 +82,7 @@ final class SpeechProviderControllerProvider
 }
 
 String _$speechProviderControllerHash() =>
-    r'748614be744175ccee59b982f5a00e12b631b6d8';
+    r'9f533aaad184789dbd3efc8467e110a97e9f6cea';
 
 abstract class _$SpeechProviderController
     extends

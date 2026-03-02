@@ -49,8 +49,8 @@ class ZeroTypeController extends _$ZeroTypeController {
     if (state.status == ZeroTypeStatus.recording) {
       await _recordingService.cancelRecording();
     }
-    await SoundService.playCancelSound();
-    await SoundService.resumeMusic(); // Resume music if cancelled
+    await getIt<SoundService>().playCancelSound();
+    await getIt<SoundService>().resumeMusic(); // Resume music if cancelled
     state = const ZeroTypeState();
     await _hideNativeOverlay();
   }
@@ -64,7 +64,7 @@ class ZeroTypeController extends _$ZeroTypeController {
         config.apiKey == null || config.apiKey!.isEmpty || 
         config.modelId == null || config.modelId!.isEmpty) {
       await _showNativeOverlay('error', '請先完成語音辨識模型設定');
-      await SoundService.playCancelSound();
+      await getIt<SoundService>().playCancelSound();
       await Future.delayed(const Duration(seconds: 3));
       if (ref.mounted && !_cancelled) {
         state = const ZeroTypeState();
@@ -84,7 +84,7 @@ class ZeroTypeController extends _$ZeroTypeController {
     if (!ref.mounted || _cancelled) return;
     if (!isAccessibilityOk) {
       await _showNativeOverlay('error', '請先授權輔助使用權限');
-      await SoundService.playCancelSound();
+      await getIt<SoundService>().playCancelSound();
       await Future.delayed(const Duration(seconds: 3));
       if (ref.mounted && !_cancelled) {
         state = const ZeroTypeState();
@@ -97,7 +97,7 @@ class ZeroTypeController extends _$ZeroTypeController {
     if (!ref.mounted || _cancelled) return;
     if (!hasPermission) {
       await _showNativeOverlay('error', '請先授權麥克風權限');
-      await SoundService.playCancelSound();
+      await getIt<SoundService>().playCancelSound();
       await Future.delayed(const Duration(seconds: 3));
       if (ref.mounted && !_cancelled) {
         state = const ZeroTypeState();
@@ -106,8 +106,8 @@ class ZeroTypeController extends _$ZeroTypeController {
       return;
     }
 
-    await SoundService.pauseMusic(); // Pause background music
-    await SoundService.playStartSound();
+    await getIt<SoundService>().pauseMusic(); // Pause background music
+    await getIt<SoundService>().playStartSound();
     if (!ref.mounted || _cancelled) return;
     state = state.copyWith(status: ZeroTypeStatus.recording, amplitude: 0.0);
     await _showNativeOverlay('recording', '錄音中');
@@ -168,8 +168,8 @@ class ZeroTypeController extends _$ZeroTypeController {
       final stopFuture = _recordingService.stopRecording();
 
       // 2. Play stop sound in parallel
-      final soundFuture = SoundService.playStopSound();
-      SoundService.resumeMusic();
+      final soundFuture = getIt<SoundService>().playStopSound();
+      getIt<SoundService>().resumeMusic();
 
       final filePath = await stopFuture;
       await soundFuture;
@@ -221,7 +221,7 @@ class ZeroTypeController extends _$ZeroTypeController {
         errorMessage: e.toString(),
       );
       await _showNativeOverlay('error', '處理失敗：$e');
-      await SoundService.resumeMusic(); // Ensure music resumes on error
+      await getIt<SoundService>().resumeMusic(); // Ensure music resumes on error
       await Future.delayed(const Duration(seconds: 3));
       if (ref.mounted && !_cancelled) {
         state = const ZeroTypeState();

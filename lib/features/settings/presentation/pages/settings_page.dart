@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:zero_type/core/di/injection.dart';
+import 'package:zero_type/core/services/sound_service.dart';
 import 'package:zero_type/core/theme/theme_controller.dart';
 import '../controllers/settings_controller.dart';
 
@@ -157,6 +159,61 @@ class _SettingsPageState extends ConsumerState<SettingsPage> with WidgetsBinding
                 
                 const SizedBox(height: 32),
                 
+                // --- Sound Section ---
+                _SectionHeader(title: '音效'),
+                const SizedBox(height: 12),
+                _SettingsCard(
+                  children: [
+                    settings.when(
+                      data: (data) => _SettingTile(
+                        icon: Icons.volume_up,
+                        title: '啟用音效',
+                        subtitle: '開始與停止錄音時播放提示音',
+                        trailing: Switch(
+                          value: data.soundEnabled,
+                          onChanged: (val) => ref
+                              .read(settingsControllerProvider.notifier)
+                              .toggleSound(val),
+                        ),
+                      ),
+                      loading: () => const _LoadingTile(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    settings.when(
+                      data: (data) => _SoundPickerTile(
+                        icon: Icons.play_circle_outline,
+                        title: '開始錄音音效',
+                        subtitle: '按下快捷鍵開始錄音時播放',
+                        selectedPath: data.startSound,
+                        enabled: data.soundEnabled,
+                        onChanged: (path) => ref
+                            .read(settingsControllerProvider.notifier)
+                            .setStartSound(path),
+                      ),
+                      loading: () => const _LoadingTile(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    settings.when(
+                      data: (data) => _SoundPickerTile(
+                        icon: Icons.stop_circle_outlined,
+                        title: '停止錄音音效',
+                        subtitle: '再次按下快捷鍵停止錄音時播放',
+                        selectedPath: data.stopSound,
+                        enabled: data.soundEnabled,
+                        onChanged: (path) => ref
+                            .read(settingsControllerProvider.notifier)
+                            .setStopSound(path),
+                      ),
+                      loading: () => const _LoadingTile(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 32),
+
                 // --- System Permission Section ---
                 _SectionHeader(title: '系統權限'),
                 const SizedBox(height: 12),
@@ -680,6 +737,85 @@ class _LoadingTile extends StatelessWidget {
     return const Padding(
       padding: EdgeInsets.all(20),
       child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+    );
+  }
+}
+
+class _SoundPickerTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String selectedPath;
+  final bool enabled;
+  final ValueChanged<String> onChanged;
+
+  const _SoundPickerTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.selectedPath,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final effectivePath = kSystemSoundLabels.containsKey(selectedPath)
+        ? selectedPath
+        : (kSystemSoundLabels.containsKey(kDefaultStartSound)
+            ? kDefaultStartSound
+            : kSystemSoundLabels.keys.first);
+    final selectedLabel = kSystemSoundLabels[effectivePath] ?? '';
+
+    return _SettingTile(
+      icon: icon,
+      title: title,
+      subtitle: subtitle,
+      trailing: Opacity(
+        opacity: enabled ? 1.0 : 0.4,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DropdownButton<String>(
+              value: effectivePath,
+              underline: const SizedBox.shrink(),
+              borderRadius: BorderRadius.circular(12),
+              selectedItemBuilder: (_) => kSystemSoundLabels.entries.map((e) {
+                return Center(
+                  child: Text(
+                    e.value,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                );
+              }).toList(),
+              items: kSystemSoundLabels.entries.map((e) {
+                return DropdownMenuItem<String>(
+                  value: e.key,
+                  child: Text(e.value, style: const TextStyle(fontSize: 13)),
+                );
+              }).toList(),
+              onChanged: enabled
+                  ? (path) {
+                      if (path != null) onChanged(path);
+                    }
+                  : null,
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              tooltip: '預覽「$selectedLabel」',
+              icon: Icon(Icons.play_arrow_rounded, color: cs.primary, size: 20),
+              onPressed: enabled
+                  ? () => getIt<SoundService>().playPreview(effectivePath)
+                  : null,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
