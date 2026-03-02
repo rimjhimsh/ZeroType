@@ -23,8 +23,7 @@ const Map<String, String> kSystemSoundLabels = {
   '/System/Library/Sounds/Tink.aiff': 'Tink',
 };
 
-const String kDefaultStartSound =
-    '/System/Library/PrivateFrameworks/SpeechObjects.framework/Versions/A/Frameworks/DictationServices.framework/Versions/A/Resources/DefaultRecognitionSound.aiff';
+const String kDefaultStartSound = '/System/Library/Sounds/Ping.aiff';
 const String kDefaultStopSound = '/System/Library/Sounds/Submarine.aiff';
 const String kDefaultCancelSound = '/System/Library/Sounds/Basso.aiff';
 

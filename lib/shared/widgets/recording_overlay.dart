@@ -137,6 +137,11 @@ class _OverlayPill extends StatelessWidget {
               letterSpacing: 0.3,
             ),
           ),
+          if (state.status == ZeroTypeStatus.saving ||
+              state.status == ZeroTypeStatus.transcribing) ...[
+            const SizedBox(width: 1),
+            _AnimatedDots(color: dotColor),
+          ],
           const SizedBox(width: 12),
           GestureDetector(
             onTap: onCancel,
@@ -210,6 +215,54 @@ class _PulsingDotState extends State<_PulsingDot>
           shape: BoxShape.circle,
         ),
       ),
+    );
+  }
+}
+
+// ── Animated dots ─────────────────────────────────────────────────────────────
+
+class _AnimatedDots extends StatefulWidget {
+  const _AnimatedDots({required this.color});
+  final Color color;
+
+  @override
+  State<_AnimatedDots> createState() => _AnimatedDotsState();
+}
+
+class _AnimatedDotsState extends State<_AnimatedDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) {
+        final dotCount = (_ctrl.value * 3).floor() + 1;
+        return Text(
+          '.' * dotCount,
+          style: TextStyle(
+            color: widget.color,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        );
+      },
     );
   }
 }

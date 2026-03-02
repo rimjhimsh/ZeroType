@@ -120,6 +120,70 @@ class _SettingsPageState extends ConsumerState<SettingsPage> with WidgetsBinding
                       loading: () => const _LoadingTile(),
                       error: (_, __) => const SizedBox.shrink(),
                     ),
+                    const Divider(height: 1, indent: 56),
+                    // History Retention Days
+                    settings.when(
+                      data: (data) => _SettingTile(
+                        icon: Icons.history,
+                        title: '歷史記錄保留時間',
+                        subtitle: '超過保留天數的記錄將自動刪除',
+                        trailing: SegmentedButton<int>(
+                          segments: const [
+                            ButtonSegment(value: 7, label: Text('7天')),
+                            ButtonSegment(value: 14, label: Text('14天')),
+                            ButtonSegment(value: 30, label: Text('30天')),
+                          ],
+                          selected: {data.historyRetentionDays},
+                          onSelectionChanged: (selection) => ref
+                              .read(settingsControllerProvider.notifier)
+                              .setHistoryRetentionDays(selection.first),
+                          style: const ButtonStyle(
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ),
+                      ),
+                      loading: () => const _LoadingTile(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    // Max Recording Duration
+                    settings.when(
+                      data: (data) => _SettingTile(
+                        icon: Icons.timer_outlined,
+                        title: '最長錄音時間',
+                        subtitle: '超過此時長將自動停止並送出辨識',
+                        trailing: SizedBox(
+                          width: 200,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 140,
+                                child: Slider(
+                                  value: data.maxRecordingMinutes.toDouble(),
+                                  min: 1,
+                                  max: 5,
+                                  divisions: 4,
+                                  onChanged: (val) => ref
+                                      .read(settingsControllerProvider.notifier)
+                                      .setMaxRecordingMinutes(val.round()),
+                                ),
+                              ),
+                              Text(
+                                '${data.maxRecordingMinutes} 分鐘',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      loading: () => const _LoadingTile(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    ),
                   ],
                 ),
                 

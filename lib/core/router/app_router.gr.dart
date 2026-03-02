@@ -27,6 +27,22 @@ class DictionaryRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [HistoryPage]
+class HistoryRoute extends PageRouteInfo<void> {
+  const HistoryRoute({List<PageRouteInfo>? children})
+    : super(HistoryRoute.name, initialChildren: children);
+
+  static const String name = 'HistoryRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const HistoryPage();
+    },
+  );
+}
+
+/// generated route for
 /// [MainShellPage]
 class MainShellRoute extends PageRouteInfo<void> {
   const MainShellRoute({List<PageRouteInfo>? children})

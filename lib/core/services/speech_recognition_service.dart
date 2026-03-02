@@ -3,12 +3,18 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 
+typedef TranscriptionResult = ({
+  String text,
+  int? inputTokens,
+  int? outputTokens,
+});
+
 class SpeechRecognitionService {
   SpeechRecognitionService({required Dio dio}) : _dio = dio;
 
   final Dio _dio;
 
-  Future<String> transcribe({
+  Future<TranscriptionResult> transcribe({
     required String audioFilePath,
     required String apiKey,
     required String provider,
@@ -16,8 +22,8 @@ class SpeechRecognitionService {
     required String prompt,
     String? customEndpoint,
   }) async {
-    print('[SpeechRecognition] Transcribing with $provider ($model)... Custom Endpoint: ${customEndpoint ?? "None"}');
-    
+    print('[SpeechRecognition] Transcribing with $provider ($model)...');
+
     switch (provider) {
       case 'openai':
         return _transcribeWithOpenAI(
@@ -40,7 +46,7 @@ class SpeechRecognitionService {
     }
   }
 
-  Future<String> _transcribeWithOpenAI({
+  Future<TranscriptionResult> _transcribeWithOpenAI({
     required String audioFilePath,
     required String apiKey,
     required String model,
@@ -53,27 +59,47 @@ class SpeechRecognitionService {
         filename: File(audioFilePath).uri.pathSegments.last,
       ),
       'model': model,
-      'response_format': 'text',
+      'response_format': 'json',
       if (prompt.isNotEmpty) 'prompt': prompt,
     });
 
-    final url = (customEndpoint != null && customEndpoint.isNotEmpty) 
-        ? customEndpoint 
+    final url = (customEndpoint != null && customEndpoint.isNotEmpty)
+        ? customEndpoint
         : 'https://api.openai.com/v1/audio/transcriptions';
 
-    final response = await _dio.post<String>(
+    final response = await _dio.post<dynamic>(
       url,
       data: formData,
       options: Options(
         headers: {'Authorization': 'Bearer $apiKey'},
-        responseType: ResponseType.plain,
       ),
     );
 
-    return (response.data ?? '').trim();
+    // Parse JSON response to extract text and token usage
+    Map<String, dynamic>? data;
+    if (response.data is Map<String, dynamic>) {
+      data = response.data as Map<String, dynamic>;
+    } else if (response.data is String) {
+      try {
+        data = jsonDecode(response.data as String) as Map<String, dynamic>;
+      } catch (_) {
+        return (
+          text: (response.data as String).trim(),
+          inputTokens: null,
+          outputTokens: null,
+        );
+      }
+    }
+
+    final text = (data?['text'] as String? ?? '').trim();
+    final usageMap = data?['usage'] as Map<String, dynamic>?;
+    final inputTokens = usageMap?['input_tokens'] as int?;
+    final outputTokens = usageMap?['output_tokens'] as int?;
+
+    return (text: text, inputTokens: inputTokens, outputTokens: outputTokens);
   }
 
-  Future<String> _transcribeWithGemini({
+  Future<TranscriptionResult> _transcribeWithGemini({
     required String audioFilePath,
     required String apiKey,
     required String model,
@@ -81,27 +107,26 @@ class SpeechRecognitionService {
     String? customEndpoint,
   }) async {
     print('[Gemini] Start direct transcription: $audioFilePath');
-    
+
     final fileToUpload = File(audioFilePath);
     if (!fileToUpload.existsSync()) {
       throw Exception('找不到音檔：$audioFilePath');
     }
 
-    // Gemini supports AAC (m4a) directly if sent as audio/mp4 or audio/aac
-    final mimeType = audioFilePath.endsWith('.m4a') ? 'audio/mp4' : (audioFilePath.endsWith('.mp3') ? 'audio/mpeg' : 'audio/mp4');
+    final mimeType = audioFilePath.endsWith('.m4a')
+        ? 'audio/mp4'
+        : (audioFilePath.endsWith('.mp3') ? 'audio/mpeg' : 'audio/mp4');
     final audioBytes = await fileToUpload.readAsBytes();
     final base64Audio = base64Encode(audioBytes);
-    print('[Gemini] Audio prepared. Base64 Length: ${base64Audio.length}');
 
-    final finalPrompt = prompt.isEmpty ? 'Generate a transcript of the speech.' : prompt;
-    
-    // For Gemini, customEndpoint might be the full model URL prefix
+    final finalPrompt =
+        prompt.isEmpty ? 'Generate a transcript of the speech.' : prompt;
+
     final url = (customEndpoint != null && customEndpoint.isNotEmpty)
         ? '$customEndpoint/$model:generateContent'
         : 'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent';
-    
+
     try {
-      print('[Gemini] Sending generateContent request to: $url (inlineData)');
       final response = await _dio.post<Map<String, dynamic>>(
         url,
         data: {
@@ -127,30 +152,29 @@ class SpeechRecognitionService {
         ),
       );
 
-
       final candidates = response.data?['candidates'] as List?;
       if (candidates == null || candidates.isEmpty) {
-        print('[Gemini] Error: No candidates. Response: ${response.data}');
         throw Exception('Gemini 轉譯失敗：無候選回應');
       }
 
       final parts = candidates[0]['content']?['parts'] as List?;
       if (parts == null || parts.isEmpty) {
-        print('[Gemini] Error: No parts. Candidate: ${candidates[0]}');
         throw Exception('Gemini 轉譯失敗：內容為空');
       }
 
-      final result = (parts[0]['text'] as String? ?? '').trim();
-      print('[Gemini] Success! Result length: ${result.length}');
-      return result;
+      final text = (parts[0]['text'] as String? ?? '').trim();
 
+      // Extract token usage from usageMetadata
+      final usageMeta =
+          response.data?['usageMetadata'] as Map<String, dynamic>?;
+      final inputTokens = usageMeta?['promptTokenCount'] as int?;
+      final outputTokens = usageMeta?['candidatesTokenCount'] as int?;
+
+      print('[Gemini] Success! tokens: in=$inputTokens out=$outputTokens');
+      return (text: text, inputTokens: inputTokens, outputTokens: outputTokens);
     } on DioException catch (e) {
       print('[Gemini] DioException: ${e.message}');
       print('[Gemini] Status: ${e.response?.statusCode}');
-      print('[Gemini] Response Body: ${e.response?.data}');
-      rethrow;
-    } catch (e) {
-      print('[Gemini] Unexpected error: $e');
       rethrow;
     }
   }

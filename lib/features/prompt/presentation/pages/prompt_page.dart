@@ -14,7 +14,7 @@ class PromptPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: SingleChildScrollView(
+      body: Padding(
         padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24, top: 30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -29,28 +29,28 @@ class PromptPage extends ConsumerWidget {
             Text(
               '自訂發送給 AI 的系統提示詞',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withAlpha(150),
+                    color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
                   ),
             ),
             const SizedBox(height: 32),
-            PromptEditor(
-              title: '語音辨識提示詞',
-              subtitle: '提供給語音辨識模型的補充指令',
-              icon: Icons.mic,
-              value: speechPrompt.value ?? '',
-              isLoading: speechPrompt.isLoading,
-              onSave: (text) =>
-                  ref.read(speechPromptControllerProvider.notifier).save(text),
-              onReset: () => ref
-                  .read(speechPromptControllerProvider.notifier)
-                  .resetToDefault(),
+            Expanded(
+              child: PromptEditor(
+                title: '語音辨識提示詞',
+                subtitle: '提供給語音辨識模型的補充指令',
+                icon: Icons.mic,
+                value: speechPrompt.value ?? '',
+                isLoading: speechPrompt.isLoading,
+                onSave: (text) =>
+                    ref.read(speechPromptControllerProvider.notifier).save(text),
+                onReset: () => ref
+                    .read(speechPromptControllerProvider.notifier)
+                    .resetToDefault(),
+              ),
             ),
           ],
         ),
       ),
     );
   }
+
 }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zero_type/core/di/injection.dart';
 import 'package:zero_type/core/router/app_router.dart';
+import 'package:zero_type/features/history/presentation/controllers/history_controller.dart';
 import 'package:zero_type/shared/widgets/recording_overlay.dart';
 
 @RoutePage()
@@ -77,7 +78,7 @@ class _MainShellPageState extends ConsumerState<MainShellPage> {
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
-              tabsRouter.setActiveIndex(3);
+              tabsRouter.setActiveIndex(4); // Settings is now index 4
             },
             child: const Text('前往設定'),
           ),
@@ -100,10 +101,11 @@ class _MainShellPageState extends ConsumerState<MainShellPage> {
   Widget _buildMain() {
     return AutoTabsRouter(
       routes: const [
-        ModelConfigRoute(),
-        PromptRoute(),
-        DictionaryRoute(),
-        SettingsRoute(),
+        ModelConfigRoute(),   // 0 模型
+        PromptRoute(),         // 1 提示詞
+        DictionaryRoute(),     // 2 字典檔
+        HistoryRoute(),        // 3 歷史
+        SettingsRoute(),       // 4 設定
       ],
       builder: (context, child) {
         final tabsRouter = AutoTabsRouter.of(context);
@@ -139,7 +141,13 @@ class _MainShellPageState extends ConsumerState<MainShellPage> {
                     NavigationRail(
                       backgroundColor: Theme.of(context).colorScheme.surface,
                       selectedIndex: tabsRouter.activeIndex,
-                      onDestinationSelected: tabsRouter.setActiveIndex,
+                      onDestinationSelected: (index) {
+                        if (index == 3) {
+                          ref.invalidate(historyControllerProvider);
+                          ref.invalidate(historyStatsProvider);
+                        }
+                        tabsRouter.setActiveIndex(index);
+                      },
                       labelType: NavigationRailLabelType.all,
                       leading: const SizedBox(height: 16),
                       selectedIconTheme: IconThemeData(
@@ -160,6 +168,11 @@ class _MainShellPageState extends ConsumerState<MainShellPage> {
                           icon: Icon(Icons.book_outlined),
                           selectedIcon: Icon(Icons.book),
                           label: Text('字典檔'),
+                        ),
+                        NavigationRailDestination(
+                          icon: Icon(Icons.history_outlined),
+                          selectedIcon: Icon(Icons.history),
+                          label: Text('歷史'),
                         ),
                         NavigationRailDestination(
                           icon: Icon(Icons.settings_outlined),

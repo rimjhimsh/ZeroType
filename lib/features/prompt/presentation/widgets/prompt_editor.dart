@@ -37,8 +37,6 @@ class _PromptEditorState extends State<PromptEditor> {
   @override
   void didUpdateWidget(PromptEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 只有當父元件傳入的值真的改變時才更新控制項
-    // 這能防止非同步更新期間，父元件還拿著舊值就把我們剛剛手動更新的內容蓋掉
     if (widget.value != oldWidget.value) {
       _controller.text = widget.value;
       _isDirty = false;
@@ -64,6 +62,7 @@ class _PromptEditorState extends State<PromptEditor> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // --- Header ---
           Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
@@ -74,11 +73,7 @@ class _PromptEditorState extends State<PromptEditor> {
                     color: colorScheme.primary.withAlpha(30),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(
-                    widget.icon,
-                    color: colorScheme.primary,
-                    size: 20,
-                  ),
+                  child: Icon(widget.icon, color: colorScheme.primary, size: 20),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -87,18 +82,16 @@ class _PromptEditorState extends State<PromptEditor> {
                     children: [
                       Text(
                         widget.title,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         widget.subtitle,
-                        style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurface.withAlpha(120),
-                                ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurface.withAlpha(120),
+                            ),
                       ),
                     ],
                   ),
@@ -121,67 +114,74 @@ class _PromptEditorState extends State<PromptEditor> {
             ),
           ),
           const Divider(height: 1),
+          // --- Editor body ---
           if (widget.isLoading)
             const Padding(
               padding: EdgeInsets.all(40),
               child: Center(child: CircularProgressIndicator()),
             )
           else
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _controller,
-                    maxLines: 8,
-                    onChanged: (_) => setState(() => _isDirty = true),
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: colorScheme.surface.withAlpha(100),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: colorScheme.onSurface.withAlpha(40),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        maxLines: null,
+                        expands: true,
+                        textAlignVertical: TextAlignVertical.top,
+                        onChanged: (_) => setState(() => _isDirty = true),
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: colorScheme.surface.withAlpha(100),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(
+                              color: colorScheme.onSurface.withAlpha(40),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(
+                              color: colorScheme.onSurface.withAlpha(40),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(color: colorScheme.primary),
+                          ),
+                          contentPadding: const EdgeInsets.all(16),
                         ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              height: 1.6,
+                            ),
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: colorScheme.onSurface.withAlpha(40),
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: colorScheme.primary),
-                      ),
-                      contentPadding: const EdgeInsets.all(16),
                     ),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          height: 1.6,
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: FilledButton(
+                        onPressed: _isDirty
+                            ? () async {
+                                final newVal = await widget.onSave(_controller.text);
+                                setState(() {
+                                  _isDirty = false;
+                                  _controller.text = newVal;
+                                });
+                              }
+                            : null,
+                        style: FilledButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                  ),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: FilledButton(
-                      onPressed: _isDirty
-                          ? () async {
-                              final newVal = await widget.onSave(_controller.text);
-                              setState(() {
-                                _isDirty = false;
-                                _controller.text = newVal;
-                              });
-                            }
-                          : null,
-                      style: FilledButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        child: const Text('儲存'),
                       ),
-                      child: const Text('儲存'),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
         ],

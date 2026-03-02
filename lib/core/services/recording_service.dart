@@ -103,6 +103,18 @@ class RecordingService {
     }
   }
 
+  /// Moves [srcPath] to [destPath]. Tries rename first, falls back to copy+delete.
+  Future<String> moveFileTo(String srcPath, String destPath) async {
+    final srcFile = File(srcPath);
+    try {
+      await srcFile.rename(destPath);
+    } catch (_) {
+      await srcFile.copy(destPath);
+      await srcFile.delete();
+    }
+    return destPath;
+  }
+
   Future<void> _deleteCurrentFile() async {
     if (_currentFilePath != null) {
       await deleteFile(_currentFilePath!);

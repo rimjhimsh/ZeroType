@@ -7,6 +7,9 @@ import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'core/constants/app_constants.dart';
 import 'core/controllers/zero_type_controller.dart';
 import 'core/di/injection.dart';
 import 'core/router/app_router.dart';
@@ -16,6 +19,7 @@ import 'core/services/tray_service.dart';
 import 'core/state/zero_type_state.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
+import 'features/history/domain/repositories/history_repository.dart';
 import 'shared/widgets/recording_overlay.dart';
 
 void main() async {
@@ -107,6 +111,11 @@ class _AppInitializerState extends ConsumerState<_AppInitializer>
       onShowWindow: _showWindow,
       onQuit: _quit,
     );
+
+    // Auto-purge expired history records on startup
+    final prefs = getIt<SharedPreferences>();
+    final retentionDays = prefs.getInt(AppConstants.historyRetentionDaysKey) ?? 7;
+    await getIt<HistoryRepository>().purgeExpiredRecords(retentionDays);
   }
 
   Future<void> _onHotkeyActivated() async {

@@ -1,11 +1,12 @@
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
-import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/sound_service.dart';
 import '../services/speech_recognition_service.dart';
 import '../services/hotkey_service.dart';
 import '../services/tray_service.dart';
+import '../../features/history/domain/repositories/history_repository.dart';
+import '../../features/history/data/repositories/history_repository_impl.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -26,5 +27,8 @@ Future<void> configureDependencies() async {
   );
   getIt.registerSingleton<SoundService>(
     SoundService(prefs: sharedPreferences),
+  );
+  getIt.registerSingleton<HistoryRepository>(
+    HistoryRepositoryImpl(),
   );
 }

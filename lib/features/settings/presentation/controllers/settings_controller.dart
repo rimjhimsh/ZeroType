@@ -35,6 +35,8 @@ class SettingsController extends _$SettingsController {
       final soundEnabled = prefs.getBool(AppConstants.soundEnabledKey) ?? true;
       final startSound = prefs.getString(AppConstants.startSoundKey) ?? kDefaultStartSound;
       final stopSound = prefs.getString(AppConstants.stopSoundKey) ?? kDefaultStopSound;
+      final historyRetentionDays = prefs.getInt(AppConstants.historyRetentionDaysKey) ?? 7;
+      final maxRecordingMinutes = prefs.getInt(AppConstants.maxRecordingMinutesKey) ?? 1;
 
       print('[SettingsController] Build complete.');
       return SettingsState(
@@ -45,6 +47,8 @@ class SettingsController extends _$SettingsController {
         soundEnabled: soundEnabled,
         startSound: startSound,
         stopSound: stopSound,
+        historyRetentionDays: historyRetentionDays,
+        maxRecordingMinutes: maxRecordingMinutes,
       );
     } catch (e, st) {
       print('[SettingsController] Error building settings state: $e\n$st');
@@ -165,6 +169,22 @@ class SettingsController extends _$SettingsController {
     final currentState = state.value;
     if (currentState != null) {
       state = AsyncData(currentState.copyWith(stopSound: path));
+    }
+  }
+
+  Future<void> setHistoryRetentionDays(int days) async {
+    await getIt<SharedPreferences>().setInt(AppConstants.historyRetentionDaysKey, days);
+    final currentState = state.value;
+    if (currentState != null) {
+      state = AsyncData(currentState.copyWith(historyRetentionDays: days));
+    }
+  }
+
+  Future<void> setMaxRecordingMinutes(int minutes) async {
+    await getIt<SharedPreferences>().setInt(AppConstants.maxRecordingMinutesKey, minutes);
+    final currentState = state.value;
+    if (currentState != null) {
+      state = AsyncData(currentState.copyWith(maxRecordingMinutes: minutes));
     }
   }
 
